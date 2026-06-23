@@ -8,6 +8,58 @@
         .booking-item { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 8px; background: #f9f9f9; }
         .btn-accept { background: #28a745; color: white; padding: 10px; border: none; cursor: pointer; border-radius: 5px; }
     </style>
+<style>
+    body { 
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        background-color: #f8f9fa; 
+        padding: 20px; 
+        margin: 0; 
+    }
+
+    /* Nút quay lại */
+    .btn-back { 
+        background: #6c757d; color: white; padding: 10px 15px; 
+        border-radius: 8px; border: none; cursor: pointer; margin-bottom: 20px;
+        font-weight: bold;
+    }
+
+    h2 { color: #333; text-align: center; margin-bottom: 20px; }
+
+    /* Thẻ đơn hàng */
+    .booking-item { 
+        background: white; 
+        padding: 20px; 
+        margin-bottom: 15px; 
+        border-radius: 12px; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border-left: 5px solid #28a745;
+        transition: transform 0.2s;
+    }
+    
+    .booking-item:hover { transform: translateY(-3px); }
+
+    .booking-item strong { color: #555; display: block; margin-bottom: 5px; }
+
+    /* Nút nhận đơn */
+    .btn-accept { 
+        width: 100%; 
+        background: #28a745; 
+        color: white; 
+        padding: 14px; 
+        border: none; 
+        cursor: pointer; 
+        border-radius: 8px; 
+        font-weight: bold; 
+        font-size: 16px;
+        margin-top: 15px;
+        transition: background 0.3s;
+    }
+    
+    .btn-accept:hover { background: #218838; }
+
+    #newBookingList { max-width: 500px; margin: 0 auto; }
+</style>
+
 </head>
 <body>
 
