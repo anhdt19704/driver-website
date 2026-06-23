@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý Tài xế - Admin</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #333; color: white; }
+        .btn-lock { background: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Danh sách Tài xế</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Tên tài khoản</th>
+                <th>Họ tên</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody id="driverList"></tbody>
+    </table>
+
+    <script>
+        // Kiểm tra quyền Admin
+        if (localStorage.getItem('isAdmin') !== 'true') window.location.href = 'admin-login.html';
+
+        async function loadDrivers() {
+            const res = await fetch('http://localhost:3000/api/admin/drivers');
+            const drivers = await res.json();
+            const list = document.getElementById('driverList');
+            list.innerHTML = drivers.map(d => `
+                <tr>
+                    <td>${d.id}</td>
+                    <td>${d.username}</td>
+                    <td>${d.full_name}</td>
+                    <td>${d.status}</td>
+                    <td><button class="btn-lock" onclick="toggleStatus(${d.id})">Khóa/Mở</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function toggleStatus(id) {
+            await fetch('http://localhost:3000/api/admin/toggle-driver', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id })
+            });
+            loadDrivers(); // Tải lại danh sách
+        }
+
+        loadDrivers();
+    </script>
+</body>
+</html>

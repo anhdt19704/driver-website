@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đặt Taxi Nội Bài - Hạ Long - Ninh Bình</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f8f9fa; display: flex; justify-content: center; padding: 20px; }
+        .booking-card { background: white; width: 100%; max-width: 450px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #008952; }
+        label { display: block; margin-top: 15px; font-weight: bold; color: #555; }
+        select, input { width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        .price-box { background: #e8f5e9; border: 2px dashed #008952; padding: 15px; text-align: center; margin-top: 20px; border-radius: 10px; }
+        .price-value { font-size: 24px; font-weight: bold; color: #008952; }
+        .zalo-btn { width: 100%; padding: 15px; margin-top: 25px; border: none; border-radius: 10px; background: #008952; color: white; font-size: 18px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="booking-card">
+    <h2>ĐẶT XE DỊCH VỤ</h2>
+    
+    <label>Tên khách hàng</label>
+    <input type="text" id="name" placeholder="Nhập tên của bạn">
+
+    <label>Lộ trình</label>
+    <select id="route" onchange="updatePrice()">
+        <option value="HN_NB">Hà Nội - Nội Bài</option>
+        <option value="NB_HN">Nội Bài - Hà Nội</option>
+        <option value="HN_HL">Hà Nội - Hạ Long</option>
+        <option value="HN_NBinh">Hà Nội - Ninh Bình</option>
+        <option value="TOUR_DUTHUYEN">Tour Du Thuyền</option>
+    </select>
+
+    <label>Chọn loại xe</label>
+    <select id="vehicle_id" onchange="updatePrice()">
+        <option value="4">Xe 4 chỗ</option>
+        <option value="7">Xe 7 chỗ</option>
+        <option value="16">Xe 16 chỗ</option>
+    </select>
+
+    <label>Số điểm đón thêm (50k/điểm)</label>
+    <input type="number" id="extraStops" value="0" min="0" oninput="updatePrice()">
+
+    <div class="price-box">
+        <div>GIÁ TRỌN GÓI DỰ KIẾN:</div>
+        <div id="priceDisplay" class="price-value">0đ</div>
+    </div>
+
+    <label>Số điện thoại</label>
+    <input type="text" id="phone" placeholder="Nhập số điện thoại">
+
+    <label>Điểm đón cụ thể</label>
+    <input type="text" id="pickup" placeholder="Số nhà, tên đường...">
+
+    <button class="zalo-btn" onclick="submitBooking()">🚀 ĐẶT XE NGAY</button>
+</div>
+
+<script>
+    // Bảng giá chi tiết
+    const priceTable = {
+        "HN_NB": { "4": 250000, "7": 350000, "16": 500000 },
+        "NB_HN": { "4": 300000, "7": 400000, "16": 600000 },
+        "HN_HL": { "4": 1200000, "7": 1400000, "16": 2000000 },
+        "HN_NBinh": { "4": 900000, "7": 1100000, "16": 1800000 },
+        "TOUR_DUTHUYEN": { "4": 2000000, "7": 2500000, "16": 3000000 }
+    };
+
+    function updatePrice() {
+        const route = document.getElementById('route').value;
+        const vehicle = document.getElementById('vehicle_id').value;
+        const stops = parseInt(document.getElementById('extraStops').value) || 0;
+        
+        const basePrice = priceTable[route][vehicle] || 0;
+        const total = basePrice + (stops * 50000);
+        
+        document.getElementById('priceDisplay').innerText = total.toLocaleString('vi-VN') + 'đ';
+        return total;
+    }
+
+    async function submitBooking() {
+        const data = {
+            name: document.getElementById('name').value,
+            phone: document.getElementById('phone').value,
+            pickup: document.getElementById('pickup').value,
+            destination: document.getElementById('route').options[document.getElementById('route').selectedIndex].text,
+            vehicle_id: document.getElementById('vehicle_id').value,
+            price: updatePrice()
+        };
+
+        if(!data.name || !data.phone || !data.pickup) { alert("Vui lòng điền đầy đủ thông tin!"); return; }
+
+        const res = await fetch('http://localhost:3000/api/book', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+            alert("Đặt xe thành công! Vui lòng chờ nhân viên liên hệ.");
+            // Sau khi đặt xong, bạn có thể chuyển hướng khách đến trang thanh toán VietQR ở đây
+        } else {
+            alert("Lỗi hệ thống, vui lòng thử lại.");
+        }
+    }
+
+    // Chạy tính giá lần đầu
+    updatePrice();
+</script>
+
+</body>
+</html>

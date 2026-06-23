@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đơn hàng của tôi</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .filter-box { background: #f0f0f0; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
+        .booking-item { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; background: white; }
+        button { padding: 10px; cursor: pointer; background: #008952; color: white; border: none; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <button onclick="window.location.href='driver.html'">⬅ Quay lại trang chủ</button>
+    <h2>Đơn hàng của tôi</h2>
+
+    <div class="filter-box">
+        <input type="text" id="searchInput" placeholder="Tìm tên khách..." onkeyup="filterOrders()">
+        <select id="statusFilter" onchange="filterOrders()">
+            <option value="all">Tất cả đơn</option>
+            <option value="not_completed">Chưa hoàn thành</option>
+            <option value="completed">Đã hoàn thành</option>
+        </select>
+    </div>
+
+    <div id="myBookingList"></div>
+
+    <script>
+        let allOrders = []; 
+
+        async function fetchMyOrders() {
+            const driverData = localStorage.getItem('driver');
+            if (!driverData) {
+                alert("Bạn chưa đăng nhập!");
+                return;
+            }
+            const driver = JSON.parse(driverData);
+            
+            try {
+                const res = await fetch('http://localhost:3000/api/all-bookings');
+                const data = await res.json();
+                
+                // Lọc đơn hàng của riêng tài xế này
+                allOrders = data.filter(b => b.assigned_driver_id == driver.id);
+                renderOrders(allOrders);
+            } catch (err) {
+                console.error("Lỗi tải đơn hàng:", err);
+            }
+        }
+
+        function renderOrders(data) {
+            const listDiv = document.getElementById('myBookingList');
+            listDiv.innerHTML = data.map(b => `
+                <div class="booking-item">
+                    <strong>Khách:</strong> ${b.customer_name} <br>
+                    <strong>Trạng thái:</strong> ${b.status} <br>
+                    ${b.status !== 'completed' ? `
+                        <button onclick="updateStatus(${b.id})">HOÀN THÀNH</button>
+                    ` : '<span>✔ Đã hoàn thành</span>'}
+                </div>
+            `).join('');
+        }
+
+        async function updateStatus(id) {
+    const driver = JSON.parse(localStorage.getItem('driver')); // Lấy tài xế từ localStorage
+    
+    try {
+        const response = await fetch('http://localhost:3000/api/driver/update-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                id: id, 
+                status: 'completed', 
+                driverId: driver.id // Phải gửi cái này khớp với Backend
+            })
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            alert("Đã cập nhật trạng thái thành công!");
+            fetchMyOrders(); // Tải lại danh sách
+        } else {
+            alert("Lỗi: " + result.message);
+        }
+    } catch (err) {
+        alert("Không thể kết nối server!");
+        console.error(err);
+    }
+}
+
+        function filterOrders() {
+            const text = document.getElementById('searchInput').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+
+            const filtered = allOrders.filter(b => {
+                const matchText = b.customer_name.toLowerCase().includes(text);
+                const matchStatus = (status === 'all') || 
+                                    (status === 'completed' && b.status === 'completed') || 
+                                    (status === 'not_completed' && b.status !== 'completed');
+                return matchText && matchStatus;
+            });
+            renderOrders(filtered);
+        }
+
+        fetchMyOrders();
+    </script>
+</body>
+</html>

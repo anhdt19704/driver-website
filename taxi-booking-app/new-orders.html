@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đơn hàng mới</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .booking-item { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 8px; background: #f9f9f9; }
+        .btn-accept { background: #28a745; color: white; padding: 10px; border: none; cursor: pointer; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+   <button onclick="window.location.href='driver.html'">⬅ Quay lại trang chủ</button>
+   <h2>Đơn hàng mới</h2>
+    <div id="newBookingList">Đang tải dữ liệu...</div>
+
+    <script>
+        // Kiểm tra xem đã đăng nhập chưa
+        const driver = JSON.parse(localStorage.getItem('driver'));
+        if (!driver) {
+            alert("Bạn chưa đăng nhập!");
+            window.location.href = 'login.html';
+        }
+
+        async function fetchNewOrders() {
+            try {
+                const res = await fetch('http://localhost:3000/api/all-bookings');
+                if (!res.ok) throw new Error("Không thể kết nối tới Server");
+                
+                const data = await res.json();
+                console.log("Dữ liệu lấy về:", data); // Kiểm tra F12 -> Console
+
+                const pending = data.filter(b => b.status === 'pending');
+                
+                if (pending.length === 0) {
+                    document.getElementById('newBookingList').innerHTML = "Hiện tại không có đơn hàng mới nào.";
+                    return;
+                }
+
+                document.getElementById('newBookingList').innerHTML = pending.map(b => `
+                    <div class="booking-item">
+                        <strong>Khách:</strong> ${b.customer_name}<br>
+                        <strong>Lộ trình:</strong> ${b.pickup_location} ➔ ${b.destination}<br>
+                        <button class="btn-accept" onclick="acceptOrder(${b.id})">NHẬN ĐƠN</button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                document.getElementById('newBookingList').innerHTML = "Lỗi tải dữ liệu: " + err.message;
+            }
+        }
+
+        async function acceptOrder(id) {
+            try {
+                const response = await fetch('http://localhost:3000/api/driver/accept-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId: id, driverId: driver.id })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert("Đã nhận đơn thành công!");
+                    window.location.href = 'my-orders.html';
+                } else {
+                    alert("Lỗi khi nhận đơn: " + (result.message || "Đơn đã có người nhận"));
+                }
+            } catch (err) {
+                alert("Lỗi kết nối Server!");
+            }
+        }
+
+        fetchNewOrders();
+    </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h2>Chi tiết đơn hàng</h2>
+    <div id="details">Đang tải...</div>
+    
+    <div id="actions" style="margin-top:20px;">
+        <button onclick="updateStatus('success')" style="background:green; color:white;">Đón khách thành công</button>
+        <button onclick="updateStatus('failed')" style="background:red; color:white;">Hủy / Thất bại</button>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('id');
+
+        async function loadDetail() {
+            const res = await fetch(`http://localhost:3000/api/all-bookings`);
+            const bookings = await res.json();
+            const b = bookings.find(item => item.id == orderId);
+            document.getElementById('details').innerHTML = `
+                <p>Khách: ${b.customer_name}</p>
+                <p>SĐT: ${b.phone}</p>
+                <p>Lộ trình: ${b.pickup_location} ➔ ${b.destination}</p>
+            `;
+        }
+
+        async function updateStatus(type) {
+            const status = (type === 'success') ? 'completed' : 'cancelled';
+            await fetch('http://localhost:3000/api/update-status', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id: orderId, status: status })
+            });
+            alert("Đã cập nhật trạng thái!");
+            window.location.href = 'driver.html'; // Quay lại danh sách
+        }
+        loadDetail();
+    </script>
+</body>
+</html>

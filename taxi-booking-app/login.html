@@ -1,0 +1,55 @@
+<div class="login-box">
+    <h2 id="title">Đăng nhập Tài xế</h2>
+    <input type="text" id="username" placeholder="Tên đăng nhập">
+    <input type="password" id="password" placeholder="Mật khẩu">
+    <input type="text" id="fullname" placeholder="Họ tên (chỉ dùng khi đăng ký)" style="display:none;">
+    
+    <button id="mainBtn" onclick="handleAuth()">Đăng nhập</button>
+    <p onclick="toggleMode()" id="toggleText" style="cursor:pointer; color:blue;">Chưa có tài khoản? Đăng ký ngay</p>
+</div>
+
+<script>
+    let isLogin = true;
+    function toggleMode() {
+        isLogin = !isLogin;
+        document.getElementById('title').innerText = isLogin ? "Đăng nhập Tài xế" : "Đăng ký Tài xế";
+        document.getElementById('mainBtn').innerText = isLogin ? "Đăng nhập" : "Đăng ký";
+        document.getElementById('toggleText').innerText = isLogin ? "Chưa có tài khoản? Đăng ký ngay" : "Đã có tài khoản? Đăng nhập";
+        document.getElementById('fullname').style.display = isLogin ? "none" : "block";
+    }
+
+    async function handleAuth() {
+    const url = isLogin ? 'http://localhost:3000/api/auth/login' : 'http://localhost:3000/api/auth/register';
+    const body = {
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value,
+        full_name: document.getElementById('fullname').value
+    };
+    
+    try {
+        const res = await fetch(url, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(body) 
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            if(isLogin) {
+                // Đăng nhập thành công -> Lưu session và chuyển trang
+                localStorage.setItem('driver', JSON.stringify(data.driver));
+                window.location.href = 'driver.html';
+            } else {
+                // Đăng ký thành công -> Thông báo và tự động chuyển về form đăng nhập
+                alert("Đăng ký thành công! Vui lòng đăng nhập.");
+                toggleMode(); // Chuyển về form đăng nhập
+            }
+        } else {
+            alert(data.message || "Có lỗi xảy ra, vui lòng thử lại.");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Không thể kết nối đến server. Hãy kiểm tra server!");
+    }
+}
+</script>

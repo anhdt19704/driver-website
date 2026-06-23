@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>App Tài Xế - Trang chủ</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; padding: 50px; background: #f4f7f6; }
+        .menu-btn { display: block; width: 80%; max-width: 300px; margin: 20px auto; padding: 20px; font-size: 18px; border: none; border-radius: 10px; cursor: pointer; color: white; }
+        .btn-new { background: #007bff; }
+        .btn-my { background: #28a745; }
+    </style>
+</head>
+<body>
+
+    <h1>Chào, <span id="driver-name">Tài xế</span>!</h1>
+    <p>Bạn muốn làm gì hôm nay?</p>
+
+    <button class="menu-btn btn-new" onclick="window.location.href='new-orders.html'">XEM ĐƠN HÀNG MỚI</button>
+    <button class="menu-btn btn-my" onclick="window.location.href='my-orders.html'">QUẢN LÝ ĐƠN CỦA TÔI</button>
+    <button class="menu-btn" style="background: #6f42c1;" onclick="window.location.href='chat.html'">CHAT VỚI Tài Xế</button>
+
+    <button onclick="logout()" style="margin-top: 50px; color: red;">Đăng xuất</button>
+
+    <script>
+        const driver = JSON.parse(localStorage.getItem('driver'));
+        if (!driver) window.location.href = 'login.html';
+        document.getElementById('driver-name').innerText = driver.full_name;
+
+        function logout() {
+            localStorage.removeItem('driver');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>
