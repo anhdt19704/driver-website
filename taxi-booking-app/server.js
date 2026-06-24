@@ -15,9 +15,18 @@ app.use(express.json());
 // Sửa dòng cũ thành:
 app.use(express.static(__dirname));
 
+// Route cho trang chủ
 app.get('/', (req, res) => {
-    // Không cần nối thêm 'taxi-booking-app' nữa vì __dirname đã là nó rồi
     res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Route cho các trang khác (cần khai báo rõ như thế này)
+app.get('/driver.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'driver.html'));
+});
+
+app.get('/admin-hub.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin-hub.html'));
 });
 
 app.listen(PORT, () => {
