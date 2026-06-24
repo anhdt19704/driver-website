@@ -26,32 +26,36 @@
         }
 
         async function fetchNewOrders() {
-            try {
-                // ĐÃ SỬA: Dùng đường dẫn tương đối để chạy trên Render
-                const res = await fetch('/api/all-bookings');
-                if (!res.ok) throw new Error("Không thể kết nối tới Server");
-                
-                const data = await res.json();
-                const pending = data.filter(b => b.status === 'pending');
-                
-                if (pending.length === 0) {
-                    document.getElementById('newBookingList').innerHTML = "<p style='text-align:center;'>Hiện tại không có đơn hàng mới.</p>";
-                    return;
-                }
+        try {
+            const res = await fetch('/api/all-bookings');
+            const data = await res.json();
+            const pending = data.filter(b => b.status === 'pending');
+            
+            if (pending.length === 0) {
+                document.getElementById('newBookingList').innerHTML = "<p style='text-align:center;'>Hiện tại không có đơn hàng mới.</p>";
+                return;
+            }
 
-                document.getElementById('newBookingList').innerHTML = pending.map(b => `
+            document.getElementById('newBookingList').innerHTML = pending.map(b => {
+                // Định dạng ngày giờ
+                const dateStr = b.pickup_date ? new Date(b.pickup_date).toLocaleDateString('vi-VN') : '---';
+                const timeStr = b.pickup_time ? b.pickup_time.substring(0, 5) : '---';
+                
+                return `
                     <div class="booking-item">
                         <strong>Khách:</strong> ${b.customer_name}<br>
+                        <strong>Thời gian:</strong> ${dateStr} - ${timeStr}<br>
                         <strong>Lộ trình:</strong> ${b.pickup_location} ➔ ${b.destination}<br>
+                        <strong>Điểm dừng thêm:</strong> ${b.stops || 0} điểm<br>
                         <strong>Giá:</strong> ${b.price ? b.price.toLocaleString() + 'đ' : 'Thỏa thuận'}<br>
                         <button class="btn-accept" onclick="acceptOrder(${b.id})">NHẬN ĐƠN</button>
                     </div>
-                `).join('');
-            } catch (err) {
-                document.getElementById('newBookingList').innerHTML = "Lỗi: " + err.message;
-            }
+                `;
+            }).join('');
+        } catch (err) {
+            document.getElementById('newBookingList').innerHTML = "Lỗi tải dữ liệu: " + err.message;
         }
-
+    }
         async function acceptOrder(id) {
             try {
                 // ĐÃ SỬA: Dùng đường dẫn tương đối

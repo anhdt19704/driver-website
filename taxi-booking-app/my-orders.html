@@ -53,19 +53,25 @@
         }
 
         function showDetails(orderId) {
-            const order = allOrders.find(o => o.id === orderId);
-            if (!order) return;
+        const order = allOrders.find(o => o.id === orderId);
+        if (!order) return;
 
-            document.getElementById('modalContent').innerHTML = `
-                <p><strong>Khách hàng:</strong> ${order.customer_name}</p>
-                <p><strong>SĐT:</strong> ${order.phone}</p>
-                <p><strong>Điểm đón:</strong> ${order.pickup_location}</p>
-                <p><strong>Điểm đến:</strong> ${order.destination}</p>
-                <p><strong>Giá tiền:</strong> ${parseFloat(order.price || 0).toLocaleString()} đ</p>
-                <p><strong>Thời gian:</strong> ${new Date(order.created_at).toLocaleString('vi-VN')}</p>
-            `;
-            document.getElementById('detailModal').style.display = 'flex';
-        }
+        // Định dạng lại ngày đón cho dễ đọc
+        const displayDate = order.pickup_date ? new Date(order.pickup_date).toLocaleDateString('vi-VN') : 'Chưa có';
+        const displayTime = order.pickup_time ? order.pickup_time.substring(0, 5) : 'Chưa có';
+
+        document.getElementById('modalContent').innerHTML = `
+            <p><strong>Khách hàng:</strong> ${order.customer_name}</p>
+            <p><strong>SĐT:</strong> ${order.phone}</p>
+            <p><strong>Ngày đón:</strong> ${displayDate} lúc ${displayTime}</p>
+            <p><strong>Điểm đón:</strong> ${order.pickup_location}</p>
+            <p><strong>Điểm đến:</strong> ${order.destination}</p>
+            <p><strong>Số điểm dừng thêm:</strong> ${order.stops || 0} điểm</p>
+            <p><strong>Giá tiền:</strong> ${parseFloat(order.price || 0).toLocaleString('vi-VN')} đ</p>
+            <p><strong>Trạng thái:</strong> ${order.status}</p>
+        `;
+        document.getElementById('detailModal').style.display = 'flex';
+    }
 
         async function finishOrder(id) {
             try {

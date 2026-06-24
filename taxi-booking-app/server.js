@@ -40,27 +40,45 @@ app.post('/api/auth/login', async (req, res) => {
 
 // --- API Đặt xe ---
 app.post('/api/book', async (req, res) => {
+    // Đảm bảo các tên biến khớp với dữ liệu gửi từ index.html
     const { name, phone, route, vehicle, date, time, stops, pickup, price } = req.body;
+    
+    // Xử lý giá tiền: loại bỏ chữ 'đ' và dấu chấm nếu cần
+    const cleanPrice = price ? price.toString().replace(/[^\d]/g, '') : 0;
+
     try {
         await pool.query(
-            `INSERT INTO bookings (customer_name, phone, route, vehicle_type, pickup_date, pickup_time, stops, pickup_location, price) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [name, phone, route, vehicle, date, time, stops, pickup, price]
+            `INSERT INTO bookings (customer_name, phone, route, vehicle_id, pickup_date, pickup_time, stops, pickup_location, price, status) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')`,
+            [name, phone, route, vehicle, date || null, time || null, stops || 0, pickup, cleanPrice]
         );
         res.json({ success: true });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, message: "Lỗi lưu database" });
+        console.error("Lỗi Database chi tiết:", err); // Xem lỗi này trong Logs của Render
+        res.status(500).json({ success: false, message: "Lỗi lưu database: " + err.message });
     }
 });
 
 // --- API Quản lý ---
 app.get('/api/all-bookings', async (req, res) => {
     try {
-        const result = await pool.query(`SELECT b.*, d.full_name AS driver_name FROM bookings b 
-                                         LEFT JOIN drivers d ON b.assigned_driver_id = d.id ORDER BY b.id DESC`);
+        // Cập nhật truy vấn để đảm bảo lấy đủ các cột mới
+        const query = `
+            SELECT b.*, 
+                   d.full_name AS driver_name,
+                   b.pickup_date, 
+                   b.pickup_time, 
+                   b.stops
+            FROM bookings b 
+            LEFT JOIN drivers d ON b.assigned_driver_id = d.id 
+            ORDER BY b.id DESC
+        `;
+        const result = await pool.query(query);
         res.json(result.rows);
-    } catch (err) { res.status(500).send(err.message); }
+    } catch (err) { 
+        console.error("Lỗi khi lấy danh sách đơn hàng:", err);
+        res.status(500).send(err.message); 
+    }
 });
 
 app.post('/api/update-status', async (req, res) => {
