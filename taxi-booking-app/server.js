@@ -115,29 +115,32 @@ app.post('/api/admin/login', (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
     try {
         const { username, password, full_name } = req.body;
-        const pool = await poolPromise;
-        await pool.request()
-            .input('u', username)
-            .input('p', password) // Lưu ý: Nên dùng bcrypt để mã hóa mật khẩu ở bước sau
-            .input('n', full_name)
-            .query('INSERT INTO drivers (username, password, full_name) VALUES (@u, @p, @n)');
+        // PostgreSQL dùng $1, $2, $3
+        const query = 'INSERT INTO drivers (username, password, full_name) VALUES ($1, $2, $3)';
+        await pool.query(query, [username, password, full_name]);
         res.json({ success: true, message: "Đăng ký thành công!" });
-    } catch (err) { res.status(500).json({ success: false, message: 'Tên đăng nhập đã tồn tại' }); }
+    } catch (err) { 
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Lỗi server hoặc tên đăng nhập đã tồn tại' }); 
+    }
 });
 
 // --- API Tài xế: Đăng nhập ---
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { username, password } = req.body;
-        const pool = await poolPromise;
-        const result = await pool.request()
-            .input('u', username)
-            .input('p', password)
-            .query('SELECT * FROM drivers WHERE username = @u AND password = @p');
+        const query = 'SELECT * FROM drivers WHERE username = $1 AND password = $2';
+        const result = await pool.query(query, [username, password]);
         
-        if (result.recordset.length > 0) res.json({ success: true, driver: result.recordset[0] });
-        else res.status(401).json({ success: false, message: 'Sai tài khoản hoặc mật khẩu' });
-    } catch (err) { res.status(500).send(err.message); }
+        if (result.rows.length > 0) {
+            res.json({ success: true, driver: result.rows[0] });
+        } else {
+            res.status(401).json({ success: false, message: 'Sai tài khoản hoặc mật khẩu' });
+        }
+    } catch (err) { 
+        console.error(err);
+        res.status(500).send(err.message); 
+    }
 });
 // Lấy danh sách toàn bộ tài xế
 app.get('/api/admin/drivers', async (req, res) => {
