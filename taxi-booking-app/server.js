@@ -64,6 +64,28 @@ app.post('/api/update-status', async (req, res) => {
         res.json({ success: true });
     } catch (err) { res.status(500).json({ success: false, message: 'Lỗi server' }); }
 });
+app.post('/api/driver/update-status', async (req, res) => {
+    const { id, status, driverId } = req.body;
+    try {
+        // Kiểm tra xem ID có nhận được không
+        if (!id || !driverId) return res.status(400).json({ message: "Thiếu dữ liệu" });
+        
+        // Thực hiện câu lệnh SQL
+        const result = await pool.query(
+            "UPDATE bookings SET status = $1 WHERE id = $2 AND assigned_driver_id = $3",
+            [status, id, driverId]
+        );
+        
+        if (result.rowCount > 0) {
+            res.json({ success: true });
+        } else {
+            res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Lỗi Server" });
+    }
+});
 
 app.post('/api/driver/accept-order', async (req, res) => {
     try {
@@ -87,5 +109,23 @@ io.on('connection', (socket) => {
 app.get(['/', '/driver.html', '/admin-hub.html'], (req, res) => {
     res.sendFile(path.join(__dirname, req.path === '/' ? 'index.html' : req.path.substring(1)));
 });
+
+// API lấy danh sách tài xế
+app.get('/api/admin/drivers', async (req, res) => {
+    try {
+        const result = await pool.query("SELECT id, username, full_name, status FROM drivers");
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: "Lỗi DB" }); }
+});
+
+// API khóa/mở tài xế
+app.post('/api/admin/toggle-driver', async (req, res) => {
+    const { id } = req.body;
+    try {
+        await pool.query("UPDATE drivers SET status = CASE WHEN status = 'active' THEN 'locked' ELSE 'active' END WHERE id = $1", [id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false }); }
+});
+
 
 server.listen(PORT, () => console.log(`Server chạy tại port ${PORT}`));

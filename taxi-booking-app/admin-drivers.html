@@ -2,19 +2,21 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý Tài xế - Admin</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-        th { background: #333; color: white; }
-        .btn-lock { background: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f4f4; margin: 0; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { padding: 15px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background: #008952; color: white; }
+        .btn-lock { background: #dc3545; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; }
+        .btn-lock:hover { background: #a71d2a; }
+        .back-btn { display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
     </style>
-    
 </head>
 <body>
     <h2>Danh sách Tài xế</h2>
-    <table>
+    <table id="driverTable">
         <thead>
             <tr>
                 <th>ID</th>
@@ -24,46 +26,65 @@
                 <th>Thao tác</th>
             </tr>
         </thead>
-        <tbody id="driverList"></tbody>
+        <tbody id="driverList">
+            <tr><td colspan="5" style="text-align:center;">Đang tải dữ liệu...</td></tr>
+        </tbody>
     </table>
-<a href="admin-hub.html" style="
-    display: inline-block;
-    margin: 10px;
-    padding: 10px 20px;
-    background-color: #6c757d;
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-    font-weight: bold;
-    font-size: 14px;">
-    &larr; Quay lại Hub
-</a>
+
+    <a href="admin-hub.html" class="back-btn">&larr; Quay lại Hub</a>
+
     <script>
         // Kiểm tra quyền Admin
-        if (localStorage.getItem('isAdmin') !== 'true') window.location.href = 'admin-login.html';
+        if (localStorage.getItem('isAdmin') !== 'true') {
+            window.location.href = 'admin-login.html';
+        }
 
         async function loadDrivers() {
-            const res = await fetch('http://localhost:3000/api/admin/drivers');
-            const drivers = await res.json();
-            const list = document.getElementById('driverList');
-            list.innerHTML = drivers.map(d => `
-                <tr>
-                    <td>${d.id}</td>
-                    <td>${d.username}</td>
-                    <td>${d.full_name}</td>
-                    <td>${d.status}</td>
-                    <td><button class="btn-lock" onclick="toggleStatus(${d.id})">Khóa/Mở</button></td>
-                </tr>
-            `).join('');
+            try {
+                // Đã sửa: Đường dẫn tương đối
+                const res = await fetch('/api/admin/drivers');
+                const drivers = await res.json();
+                
+                const list = document.getElementById('driverList');
+                if (drivers.length === 0) {
+                    list.innerHTML = '<tr><td colspan="5">Chưa có tài xế nào.</td></tr>';
+                    return;
+                }
+
+                list.innerHTML = drivers.map(d => `
+                    <tr>
+                        <td>${d.id}</td>
+                        <td>${d.username}</td>
+                        <td>${d.full_name}</td>
+                        <td>${d.status || 'active'}</td>
+                        <td><button class="btn-lock" onclick="toggleStatus(${d.id})">Khóa/Mở</button></td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error("Lỗi:", err);
+                document.getElementById('driverList').innerHTML = '<tr><td colspan="5">Lỗi kết nối server!</td></tr>';
+            }
         }
 
         async function toggleStatus(id) {
-            await fetch('http://localhost:3000/api/admin/toggle-driver', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ id })
-            });
-            loadDrivers(); // Tải lại danh sách
+            if(!confirm('Xác nhận thay đổi trạng thái tài xế này?')) return;
+            
+            try {
+                // Đã sửa: Đường dẫn tương đối
+                const res = await fetch('/api/admin/toggle-driver', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ id })
+                });
+                const result = await res.json();
+                if(result.success) {
+                    loadDrivers();
+                } else {
+                    alert("Không thể cập nhật trạng thái!");
+                }
+            } catch (err) {
+                alert("Lỗi kết nối server!");
+            }
         }
 
         loadDrivers();

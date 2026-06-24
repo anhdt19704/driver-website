@@ -8,7 +8,7 @@
         body { 
             display: flex; justify-content: center; align-items: center; 
             height: 100vh; margin: 0;
-            background: linear-gradient(135deg, #008952, #005f3a); /* Màu gradient xanh chuyên nghiệp */
+            background: linear-gradient(135deg, #008952, #005f3a);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
         }
         .login-box { 
@@ -37,16 +37,26 @@
         <h2>Admin Login</h2>
         <input type="text" id="user" placeholder="Tài khoản">
         <input type="password" id="pass" placeholder="Mật khẩu">
-        <button onclick="adminLogin()">Đăng nhập</button>
+        <button id="loginBtn" onclick="adminLogin()">Đăng nhập</button>
     </div>
 
     <script>
         async function adminLogin() {
             const user = document.getElementById('user').value;
             const pass = document.getElementById('pass').value;
+            const btn = document.getElementById('loginBtn');
+
+            if (!user || !pass) {
+                alert("Vui lòng nhập đủ tài khoản và mật khẩu!");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Đang xử lý...";
 
             try {
-                const res = await fetch('http://localhost:3000/api/admin/login', {
+                // Đường dẫn đã sửa thành tương đối để chạy trên mọi môi trường
+                const res = await fetch('/api/admin/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: user, password: pass })
@@ -56,14 +66,16 @@
                 
                 if (res.ok && data.success) {
                     localStorage.setItem('isAdmin', 'true');
-                    // Chuyển hướng sang trang Hub thay vì admin.html
                     window.location.href = 'admin-hub.html';
                 } else {
                     alert(data.message || 'Sai tài khoản hoặc mật khẩu!');
                 }
             } catch (error) {
                 console.error("Lỗi kết nối:", error);
-                alert("Không thể kết nối đến server!");
+                alert("Không thể kết nối đến server. Vui lòng kiểm tra lại mạng hoặc server!");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Đăng nhập";
             }
         }
     </script>

@@ -2,12 +2,19 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trung tâm Quản trị</title>
     <style>
-        body { font-family: sans-serif; padding: 50px; text-align: center; background: #f4f4f4; }
-        .hub-container { display: flex; justify-content: center; gap: 20px; }
-        .menu-card { background: white; padding: 30px; border-radius: 12px; text-decoration: none; color: #333; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .menu-card:hover { background: #008952; color: white; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 50px; text-align: center; background: #f4f4f4; margin: 0; }
+        h1 { color: #333; margin-bottom: 40px; }
+        .hub-container { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        .menu-card { 
+            background: white; padding: 30px; border-radius: 12px; 
+            text-decoration: none; color: #333; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 150px; transition: 0.3s;
+        }
+        .menu-card:hover { background: #008952; color: white; transform: translateY(-5px); }
+        .logout-btn { margin-top: 40px; color: red; cursor: pointer; text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -15,7 +22,19 @@
     <div class="hub-container">
         <a href="admin.html" class="menu-card"><h3>Đơn hàng</h3></a>
         <a href="admin-drivers.html" class="menu-card"><h3>Tài xế</h3></a>
-        <a href="admin-login.html" class="menu-card"><h3>Đăng nhập</h3></a>
     </div>
+    <div class="logout-btn" onclick="logout()">Đăng xuất</div>
+
+    <script>
+        // Kiểm tra xem đã đăng nhập chưa
+        if (localStorage.getItem('isAdmin') !== 'true') {
+            window.location.href = 'admin-login.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('isAdmin');
+            window.location.href = 'admin-login.html';
+        }
+    </script>
 </body>
 </html>
