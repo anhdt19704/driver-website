@@ -2,28 +2,22 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Tài Xế</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; height: 100vh; margin: 0; padding: 10px; }
-        
-        /* Nút quay lại */
         .back-btn { padding: 10px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 10px; width: fit-content; }
-        
-        /* Khung chat */
         #chat-box { flex-grow: 1; border-radius: 10px; border: 1px solid #ddd; overflow-y: auto; padding: 15px; background: white; margin-bottom: 10px; display: flex; flex-direction: column; }
         .msg { margin-bottom: 10px; padding: 10px; border-radius: 8px; background: #e9ecef; max-width: 80%; word-wrap: break-word; }
         .my-msg { background: #0084ff; color: white; align-self: flex-end; }
-        
-        /* Khung nhập liệu */
-        .input-area { display: flex; gap: 5px; }
+        .input-area { display: flex; gap: 5px; padding-bottom: 10px; }
         input { flex-grow: 1; padding: 12px; border: 1px solid #ddd; border-radius: 5px; }
         button { padding: 10px 20px; background: #0084ff; color: white; border: none; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <button class="back-btn" onclick="window.location.href='driver.html'">⬅ Quay lại danh sách đơn</button>
-    
+    <button class="back-btn" onclick="window.location.href='driver.html'">⬅ Quay lại</button>
     <h3 style="text-align:center; margin-top:0;">Kênh Trao Đổi Tài Xế</h3>
     <div id="chat-box"></div>
     
@@ -33,62 +27,49 @@
     </div>
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-<script>
-    // 1. Kiểm tra đăng nhập
-    const driver = JSON.parse(localStorage.getItem('driver'));
-    if (!driver) window.location.href = 'login.html';
+    <script>
+        const driver = JSON.parse(localStorage.getItem('driver'));
+        if (!driver) window.location.href = 'login.html';
 
-    const socket = io('http://localhost:3000');
-    const chatBox = document.getElementById('chat-box');
+        // ĐÃ SỬA: Bỏ 'http://localhost:3000' để Socket.io tự nhận URL hiện tại
+        const socket = io(); 
+        const chatBox = document.getElementById('chat-box');
 
-    // Hàm hiển thị tin nhắn (Dùng chung cho cả tin nhắn mới và lịch sử)
-    function addMessageToBox(data) {
-        console.log("Đang hiển thị tin nhắn:", data);
-        const div = document.createElement('div');
-        
-        // So sánh an toàn: Loại bỏ khoảng trắng và viết thường để so khớp
-        const isMyMsg = data.user.trim().toLowerCase() === driver.full_name.trim().toLowerCase();
-        
-        div.className = 'msg' + (isMyMsg ? ' my-msg' : '');
-        div.innerHTML = `<b>${data.user}:</b> ${data.msg} <br><small style="font-size:0.7em; opacity:0.7">${data.time}</small>`;
-        
-        chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
+        function addMessageToBox(data) {
+            const div = document.createElement('div');
+            // So sánh tên để biết tin nhắn của ai
+            const isMyMsg = data.user.trim().toLowerCase() === driver.full_name.trim().toLowerCase();
+            
+            div.className = 'msg' + (isMyMsg ? ' my-msg' : '');
+            div.innerHTML = `<b>${data.user}:</b> ${data.msg} <br><small style="font-size:0.7em; opacity:0.7">${data.time || ''}</small>`;
+            
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
 
-    // 2. Gửi tin nhắn
-    function sendMessage() {
-        const input = document.getElementById('msgInput');
-        const msg = input.value.trim();
-        if(!msg) return;
-        
-        const messageData = { 
-            user: driver.full_name, 
-            msg: msg, 
-            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-        };
+        function sendMessage() {
+            const input = document.getElementById('msgInput');
+            const msg = input.value.trim();
+            if(!msg) return;
+            
+            const messageData = { 
+                user: driver.full_name, 
+                msg: msg, 
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            };
 
-        socket.emit('chat_message', messageData);
-        console.log("Đã phát sự kiện chat_message:", messageData);
-        input.value = '';
-    }
+            socket.emit('chat_message', messageData);
+            input.value = '';
+        }
 
-    // 3. Lắng nghe tin nhắn mới từ server
-    socket.on('new_chat_message', (data) => {
-        addMessageToBox(data);
-    });
+        socket.on('new_chat_message', (data) => {
+            addMessageToBox(data);
+        });
 
-    // 4. Lắng nghe lịch sử
-    socket.on('load_chat_history', (history) => {
-        chatBox.innerHTML = ''; // Xóa sạch trước khi load để tránh lặp
-        history.forEach(data => addMessageToBox(data));
-    });
-
-    // Bắt lỗi kết nối
-    socket.on('connect_error', (err) => {
-        console.error("Lỗi kết nối Socket:", err);
-    });
-</script>
+        socket.on('load_chat_history', (history) => {
+            chatBox.innerHTML = ''; 
+            history.forEach(data => addMessageToBox(data));
+        });
+    </script>
 </body>
 </html>

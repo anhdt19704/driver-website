@@ -114,9 +114,41 @@
         document.getElementById('priceDisplay').innerText = total.toLocaleString('vi-VN') + 'đ';
     }
 
-    function submitBooking() {
-        alert("Đơn hàng của bạn đã được ghi nhận!");
+   async function submitBooking() {
+    const bookingData = {
+        name: document.getElementById('name').value,
+        phone: document.getElementById('phone').value,
+        pickup: document.getElementById('pickup').value,
+        destination: document.getElementById('route').value === 'HN_NB' ? 'Sân bay Nội Bài' : 'Hà Nội',
+        vehicle_id: document.getElementById('vehicle_id').value,
+        // Lấy giá từ text hiển thị
+        price: document.getElementById('priceDisplay').innerText.replace(/\./g, '').replace('đ', '')
+    };
+
+    if (!bookingData.name || !bookingData.phone || !bookingData.pickup) {
+        alert("Vui lòng điền đầy đủ thông tin!");
+        return;
     }
+
+    try {
+        // Gọi API đến server Node.js của bạn
+        const response = await fetch('/api/book', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bookingData)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            alert("✅ Đặt xe thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất.");
+        } else {
+            alert("❌ Lỗi: " + result.message);
+        }
+    } catch (err) {
+        console.error("Lỗi:", err);
+        alert("Không thể kết nối đến server. Vui lòng thử lại!");
+    }
+}
 </script>
 </body>
 </html>

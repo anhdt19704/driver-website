@@ -4,27 +4,20 @@
     <meta charset="UTF-8">
     <title>Đơn hàng của tôi</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8f9fa; padding: 20px; margin: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; padding: 20px; margin: 0; }
         h2 { color: #333; text-align: center; }
-        
-        /* Bộ lọc */
         .filter-box { background: white; padding: 20px; margin-bottom: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; gap: 10px; }
         input, select { padding: 10px; border: 1px solid #ddd; border-radius: 8px; flex: 1; }
-
-        /* Card đơn hàng */
         .booking-item { background: white; padding: 20px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-left: 5px solid #008952; }
         .status-done { color: #008952; font-weight: bold; }
-        
-        /* Nút */
         button { padding: 10px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
         .btn-complete { width: 100%; background: #008952; color: white; margin-top: 10px; }
         .btn-detail { width: 100%; background: #007bff; color: white; margin-bottom: 5px; }
-        button:hover { opacity: 0.9; }
     </style>
 </head>
 <body>
 
-    <button onclick="window.location.href='driver.html'" style="background:#6c757d; color:white;">⬅ Quay lại trang chủ</button>
+    <button onclick="window.location.href='driver.html'" style="background:#6c757d; color:white;">⬅ Quay lại</button>
     <h2>Đơn hàng của tôi</h2>
 
     <div class="filter-box">
@@ -38,25 +31,19 @@
 
     <div id="myBookingList"></div>
 
-    <div id="orderModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:1000;">
-        <div style="background:white; padding:25px; border-radius:15px; width:90%; max-width:400px;">
-            <h3>Chi tiết đơn hàng</h3>
-            <div id="modalContent"></div>
-            <button onclick="document.getElementById('orderModal').style.display='none'" style="width:100%; padding:10px; margin-top:20px; background:#6c757d; color:white;">Đóng</button>
-        </div>
-    </div>
-
     <script>
         let allOrders = []; 
 
         async function fetchMyOrders() {
             const driverData = localStorage.getItem('driver');
-            if (!driverData) { alert("Bạn chưa đăng nhập!"); return; }
+            if (!driverData) { window.location.href = 'login.html'; return; }
             const driver = JSON.parse(driverData);
             
             try {
-                const res = await fetch('http://localhost:3000/api/all-bookings');
+                // ĐÃ SỬA: Bỏ http://localhost:3000 để chạy đúng trên Render
+                const res = await fetch('/api/all-bookings');
                 const data = await res.json();
+                // Lọc đơn của chính tài xế này
                 allOrders = data.filter(b => b.assigned_driver_id == driver.id);
                 renderOrders(allOrders);
             } catch (err) { console.error("Lỗi tải đơn hàng:", err); }
@@ -64,40 +51,28 @@
 
         function renderOrders(data) {
             const listDiv = document.getElementById('myBookingList');
-            listDiv.innerHTML = data.map(b => `
+            listDiv.innerHTML = data.length ? data.map(b => `
                 <div class="booking-item">
                     <p><strong>Khách hàng:</strong> ${b.customer_name}</p>
                     <p><strong>Trạng thái:</strong> ${b.status === 'completed' ? '<span class="status-done">✔ Đã hoàn thành</span>' : 'Đang thực hiện'}</p>
-                    <button class="btn-detail" onclick="viewDetail(${b.id})">Xem chi tiết</button>
+                    <button class="btn-detail" onclick="alert('Điểm đón: ${b.pickup_location}\\nĐiểm đến: ${b.destination}')">Xem chi tiết</button>
                     ${b.status !== 'completed' ? `<button class="btn-complete" onclick="updateStatus(${b.id})">HOÀN THÀNH</button>` : ''}
                 </div>
-            `).join('');
-        }
-
-        function viewDetail(id) {
-            const order = allOrders.find(b => b.id == id);
-            if (order) {
-                document.getElementById('modalContent').innerHTML = `
-                    <p><strong>Khách hàng:</strong> ${order.customer_name}</p>
-                    <p><strong>SĐT:</strong> ${order.phone || 'Không có'}</p>
-                    <p><strong>Điểm đón:</strong> ${order.pickup_location}</p>
-                    <p><strong>Điểm đến:</strong> ${order.destination}</p>
-                `;
-                document.getElementById('orderModal').style.display = 'flex';
-            }
+            `).join('') : '<p style="text-align:center;">Chưa có đơn hàng nào.</p>';
         }
 
         async function updateStatus(id) {
             const driver = JSON.parse(localStorage.getItem('driver'));
             try {
-                const response = await fetch('http://localhost:3000/api/driver/update-status', {
+                // ĐÃ SỬA: Bỏ http://localhost:3000
+                const response = await fetch('/api/driver/update-status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: id, status: 'completed', driverId: driver.id })
                 });
                 if (response.ok) {
                     alert("Đã hoàn thành đơn!");
-                    fetchMyOrders();
+                    fetchMyOrders(); // Tải lại danh sách
                 } else { alert("Lỗi cập nhật!"); }
             } catch (err) { alert("Không thể kết nối server!"); }
         }

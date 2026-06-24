@@ -2,91 +2,40 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đơn hàng mới</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .booking-item { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 8px; background: #f9f9f9; }
-        .btn-accept { background: #28a745; color: white; padding: 10px; border: none; cursor: pointer; border-radius: 5px; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f8f9fa; padding: 20px; margin: 0; }
+        h2 { color: #333; text-align: center; }
+        .booking-item { background: white; padding: 20px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid #28a745; }
+        .btn-accept { width: 100%; background: #28a745; color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        .btn-accept:hover { background: #218838; }
+        #newBookingList { max-width: 500px; margin: 0 auto; }
     </style>
-<style>
-    body { 
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-        background-color: #f8f9fa; 
-        padding: 20px; 
-        margin: 0; 
-    }
-
-    /* Nút quay lại */
-    .btn-back { 
-        background: #6c757d; color: white; padding: 10px 15px; 
-        border-radius: 8px; border: none; cursor: pointer; margin-bottom: 20px;
-        font-weight: bold;
-    }
-
-    h2 { color: #333; text-align: center; margin-bottom: 20px; }
-
-    /* Thẻ đơn hàng */
-    .booking-item { 
-        background: white; 
-        padding: 20px; 
-        margin-bottom: 15px; 
-        border-radius: 12px; 
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        border-left: 5px solid #28a745;
-        transition: transform 0.2s;
-    }
-    
-    .booking-item:hover { transform: translateY(-3px); }
-
-    .booking-item strong { color: #555; display: block; margin-bottom: 5px; }
-
-    /* Nút nhận đơn */
-    .btn-accept { 
-        width: 100%; 
-        background: #28a745; 
-        color: white; 
-        padding: 14px; 
-        border: none; 
-        cursor: pointer; 
-        border-radius: 8px; 
-        font-weight: bold; 
-        font-size: 16px;
-        margin-top: 15px;
-        transition: background 0.3s;
-    }
-    
-    .btn-accept:hover { background: #218838; }
-
-    #newBookingList { max-width: 500px; margin: 0 auto; }
-</style>
-
 </head>
 <body>
 
-   <button onclick="window.location.href='driver.html'">⬅ Quay lại trang chủ</button>
-   <h2>Đơn hàng mới</h2>
+    <button onclick="window.location.href='driver.html'" style="padding:10px; border-radius:8px; border:none; cursor:pointer;">⬅ Quay lại</button>
+    <h2>Đơn hàng mới</h2>
     <div id="newBookingList">Đang tải dữ liệu...</div>
 
     <script>
-        // Kiểm tra xem đã đăng nhập chưa
         const driver = JSON.parse(localStorage.getItem('driver'));
         if (!driver) {
-            alert("Bạn chưa đăng nhập!");
             window.location.href = 'login.html';
         }
 
         async function fetchNewOrders() {
             try {
-                const res = await fetch('http://localhost:3000/api/all-bookings');
+                // ĐÃ SỬA: Dùng đường dẫn tương đối để chạy trên Render
+                const res = await fetch('/api/all-bookings');
                 if (!res.ok) throw new Error("Không thể kết nối tới Server");
                 
                 const data = await res.json();
-                console.log("Dữ liệu lấy về:", data); // Kiểm tra F12 -> Console
-
                 const pending = data.filter(b => b.status === 'pending');
                 
                 if (pending.length === 0) {
-                    document.getElementById('newBookingList').innerHTML = "Hiện tại không có đơn hàng mới nào.";
+                    document.getElementById('newBookingList').innerHTML = "<p style='text-align:center;'>Hiện tại không có đơn hàng mới.</p>";
                     return;
                 }
 
@@ -94,28 +43,31 @@
                     <div class="booking-item">
                         <strong>Khách:</strong> ${b.customer_name}<br>
                         <strong>Lộ trình:</strong> ${b.pickup_location} ➔ ${b.destination}<br>
+                        <strong>Giá:</strong> ${b.price ? b.price.toLocaleString() + 'đ' : 'Thỏa thuận'}<br>
                         <button class="btn-accept" onclick="acceptOrder(${b.id})">NHẬN ĐƠN</button>
                     </div>
                 `).join('');
             } catch (err) {
-                document.getElementById('newBookingList').innerHTML = "Lỗi tải dữ liệu: " + err.message;
+                document.getElementById('newBookingList').innerHTML = "Lỗi: " + err.message;
             }
         }
 
         async function acceptOrder(id) {
             try {
-                const response = await fetch('http://localhost:3000/api/driver/accept-order', {
+                // ĐÃ SỬA: Dùng đường dẫn tương đối
+                const response = await fetch('/api/driver/accept-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ orderId: id, driverId: driver.id })
                 });
-                const result = await response.json();
                 
+                const result = await response.json();
                 if (result.success) {
                     alert("Đã nhận đơn thành công!");
                     window.location.href = 'my-orders.html';
                 } else {
-                    alert("Lỗi khi nhận đơn: " + (result.message || "Đơn đã có người nhận"));
+                    alert("Lỗi: " + (result.message || "Đơn đã có người nhận"));
+                    fetchNewOrders(); // Tải lại danh sách nếu lỗi
                 }
             } catch (err) {
                 alert("Lỗi kết nối Server!");

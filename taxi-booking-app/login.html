@@ -8,9 +8,72 @@
     <p onclick="toggleMode()" id="toggleText" style="cursor:pointer; color:blue; margin-top: 15px;">Chưa có tài khoản? Đăng ký ngay</p>
 </div>
 
-<style>
-    /* Giữ nguyên CSS cũ của bạn, thêm style cho button đang loading */
-    button:disabled { background: #ccc; cursor: not-allowed; }
+    <style>
+
+    /* Tổng thể màn hình */
+ button:disabled { background: #ccc; cursor: not-allowed; }
+    body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: linear-gradient(135deg, #008952, #005f3a);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    /* Khung chứa form */
+    .login-box {
+        background: white;
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        width: 320px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    h2 { color: #333; margin-bottom: 25px; }
+    input {
+        display: block;
+        width: 100%;
+        margin-bottom: 15px;
+        padding: 14px;
+        border: 2px solid #eee;
+        border-radius: 8px;
+        box-sizing: border-box;
+        transition: border-color 0.3s;
+    }
+    input:focus {
+        border-color: #008952;
+        outline: none;
+    }
+    button {
+        width: 100%;
+        padding: 14px;
+        background: #008952;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        transition: background 0.3s, transform 0.2s;
+    }
+    button:hover {
+        background: #006a3f;
+        transform: translateY(-2px);
+    }
+    #toggleText {
+        margin-top: 20px;
+        color: #666;
+        font-size: 14px;
+        text-decoration: underline;
+        transition: color 0.3s;
+    }
+    #toggleText:hover {
+        color: #008952;
+    }
+
 </style>
 
 <script>
