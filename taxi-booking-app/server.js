@@ -129,6 +129,16 @@ app.delete('/api/admin/delete-order/:id', async (req, res) => {
     }
 });
 
+app.post('/api/admin/login', async (req, res) => {
+    const { username, password } = req.body;
+    // Thay đổi logic kiểm tra theo bảng admin của bạn
+    if (username === 'admin' && password === '123456') {
+        res.json({ success: true });
+    } else {
+        res.status(401).json({ success: false, message: 'Sai thông tin admin' });
+    }
+});
+
 app.post('/api/driver/accept-order', async (req, res) => {
     const { orderId, driverId } = req.body;
     try {
