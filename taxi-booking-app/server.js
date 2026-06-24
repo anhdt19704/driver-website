@@ -40,12 +40,18 @@ app.post('/api/auth/login', async (req, res) => {
 
 // --- API Đặt xe ---
 app.post('/api/book', async (req, res) => {
+    const { name, phone, route, vehicle, date, time, stops, pickup, price } = req.body;
     try {
-        const { name, phone, pickup, destination, vehicle_id, price } = req.body;
-        await pool.query(`INSERT INTO bookings (customer_name, phone, pickup_location, destination, vehicle_id, price, status) 
-                          VALUES ($1, $2, $3, $4, $5, $6, 'pending')`, [name, phone, pickup, destination, vehicle_id, price]);
+        await pool.query(
+            `INSERT INTO bookings (customer_name, phone, route, vehicle_type, pickup_date, pickup_time, stops, pickup_location, price) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [name, phone, route, vehicle, date, time, stops, pickup, price]
+        );
         res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: "Lỗi lưu database" });
+    }
 });
 
 // --- API Quản lý ---
