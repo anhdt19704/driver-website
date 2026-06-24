@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
-const { Pool } = require('pg'); // Chỉ dùng pg
+const { Pool } = require('pg');
 const path = require('path');
 
 const app = express();
@@ -38,9 +38,8 @@ app.post('/api/auth/login', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- API Đặt xe ---
+// --- API Đặt xe (Đã bao gồm destination và các cột mới) ---
 app.post('/api/book', async (req, res) => {
-    // Thêm destination vào danh sách biến nhận từ req.body
     const { name, phone, route, vehicle, date, time, stops, pickup, destination, price } = req.body;
     const cleanPrice = price ? price.toString().replace(/[^\d]/g, '') : 0;
 
@@ -60,61 +59,44 @@ app.post('/api/book', async (req, res) => {
 // --- API Quản lý ---
 app.get('/api/all-bookings', async (req, res) => {
     try {
-        // Cập nhật truy vấn để đảm bảo lấy đủ các cột mới
         const query = `
-            SELECT b.*, 
-                   d.full_name AS driver_name,
-                   b.pickup_date, 
-                   b.pickup_time, 
-                   b.stops
+            SELECT b.*, d.full_name AS driver_name
             FROM bookings b 
             LEFT JOIN drivers d ON b.assigned_driver_id = d.id 
             ORDER BY b.id DESC
         `;
         const result = await pool.query(query);
         res.json(result.rows);
-    } catch (err) { 
-        console.error("Lỗi khi lấy danh sách đơn hàng:", err);
-        res.status(500).send(err.message); 
-    }
+    } catch (err) { res.status(500).send(err.message); }
 });
 
-app.post('/api/update-status', async (req, res) => {
+// API lấy đơn hàng cho tài xế
+app.get('/api/driver/orders', async (req, res) => {
     try {
-        const { id, status } = req.body;
-        await pool.query('UPDATE bookings SET status = $1 WHERE id = $2', [status, id]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false, message: 'Lỗi server' }); }
+        const query = `
+            SELECT id, customer_name, phone, pickup_location, destination, 
+                   price, status, created_at, pickup_date, pickup_time, stops 
+            FROM bookings ORDER BY id DESC
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (err) { res.status(500).send("Lỗi tải đơn hàng"); }
 });
+
+// API cập nhật trạng thái đơn hàng (Dành cho tài xế)
 app.post('/api/driver/update-status', async (req, res) => {
     const { id, status, driverId } = req.body;
     try {
-        // Kiểm tra xem ID có nhận được không
-        if (!id || !driverId) return res.status(400).json({ message: "Thiếu dữ liệu" });
+        if (!id || !driverId) return res.status(400).json({ success: false, message: "Thiếu dữ liệu" });
         
-        // Thực hiện câu lệnh SQL
         const result = await pool.query(
             "UPDATE bookings SET status = $1 WHERE id = $2 AND assigned_driver_id = $3",
             [status, id, driverId]
         );
         
-        if (result.rowCount > 0) {
-            res.json({ success: true });
-        } else {
-            res.status(404).json({ message: "Không tìm thấy đơn hàng" });
-        }
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Lỗi Server" });
-    }
-});
-
-app.post('/api/driver/accept-order', async (req, res) => {
-    try {
-        const { orderId, driverId } = req.body;
-        await pool.query("UPDATE bookings SET status = 'assigned', assigned_driver_id = $1 WHERE id = $2 AND status = 'pending'", [driverId, orderId]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).send(err.message); }
+        if (result.rowCount > 0) res.json({ success: true });
+        else res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng" });
+    } catch (err) { res.status(500).json({ success: false, message: "Lỗi Server" }); }
 });
 
 // --- Socket.io xử lý chat ---
@@ -128,42 +110,8 @@ io.on('connection', (socket) => {
 });
 
 // --- Route tĩnh ---
-app.get(['/', '/driver.html', '/admin-hub.html'], (req, res) => {
+app.get(['/', '/driver.html', '/admin-hub.html', '/my-orders.html'], (req, res) => {
     res.sendFile(path.join(__dirname, req.path === '/' ? 'index.html' : req.path.substring(1)));
-});
-
-// API lấy danh sách tài xế
-app.get('/api/admin/drivers', async (req, res) => {
-    try {
-        const result = await pool.query("SELECT id, username, full_name, status FROM drivers");
-        res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: "Lỗi DB" }); }
-});
-
-// API khóa/mở tài xế
-app.post('/api/admin/toggle-driver', async (req, res) => {
-    const { id } = req.body;
-    try {
-        await pool.query("UPDATE drivers SET status = CASE WHEN status = 'active' THEN 'locked' ELSE 'active' END WHERE id = $1", [id]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
-});
-app.get('/api/driver/orders', async (req, res) => {
-    try {
-        // Truy vấn bao gồm các cột mới bạn vừa thêm vào database
-        const query = `
-            SELECT id, customer_name, phone, pickup_location, destination, 
-                   price, status, created_at, 
-                   pickup_date, pickup_time, stops 
-            FROM bookings 
-            ORDER BY id DESC
-        `;
-        const result = await pool.query(query);
-        res.json(result.rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Lỗi tải đơn hàng");
-    }
 });
 
 server.listen(PORT, () => console.log(`Server chạy tại port ${PORT}`));

@@ -74,21 +74,31 @@
     }
 
         async function finishOrder(id) {
-            try {
-                const res = await fetch('/api/driver/update-status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: id, status: 'completed', driverId: localStorage.getItem('driverId') })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    alert("Đã cập nhật thành công!");
-                    loadOrders();
-                } else {
-                    alert("Lỗi cập nhật: " + (data.message || ""));
-                }
-            } catch (err) { alert("Không thể kết nối server!"); }
+    const dId = localStorage.getItem('driverId');
+    
+    // Debug: Kiểm tra dữ liệu trước khi gửi
+    console.log("Dữ liệu gửi lên server:", { id: id, status: 'completed', driverId: dId });
+
+    if (!dId) {
+        alert("Bạn chưa đăng nhập hoặc không tìm thấy ID tài xế!");
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/driver/update-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id, status: 'completed', driverId: dId })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("Đã cập nhật thành công!");
+            loadOrders();
+        } else {
+            alert("Lỗi từ server: " + (data.message || "Không xác định"));
         }
+    } catch (err) { alert("Không thể kết nối server!"); }
+}
 
         function closeModal() { document.getElementById('detailModal').style.display = 'none'; }
         loadOrders();
