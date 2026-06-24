@@ -1,80 +1,30 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập Tài xế</title>
+    <style>
+        body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #008952, #005f3a); font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .login-box { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 320px; text-align: center; }
+        h2 { color: #333; margin-bottom: 25px; }
+        input { display: block; width: 100%; margin-bottom: 15px; padding: 14px; border: 2px solid #eee; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; background: #008952; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #toggleText { margin-top: 20px; color: #666; font-size: 14px; text-decoration: underline; cursor: pointer; }
+    </style>
+</head>
+<body>
+
 <div class="login-box">
     <h2 id="title">Đăng nhập Tài xế</h2>
     <input type="text" id="username" placeholder="Tên đăng nhập" required>
     <input type="password" id="password" placeholder="Mật khẩu" required>
-    <input type="text" id="fullname" placeholder="Họ tên (chỉ dùng khi đăng ký)" style="display:none;">
+    <input type="text" id="fullname" placeholder="Họ tên" style="display:none;">
 
     <button id="mainBtn" onclick="handleAuth()">Đăng nhập</button>
-    <p onclick="toggleMode()" id="toggleText" style="cursor:pointer; color:blue; margin-top: 15px;">Chưa có tài khoản? Đăng ký ngay</p>
+    <p id="toggleText" onclick="toggleMode()">Chưa có tài khoản? Đăng ký ngay</p>
 </div>
-
-    <style>
-
-    /* Tổng thể màn hình */
- button:disabled { background: #ccc; cursor: not-allowed; }
-    body {
-        margin: 0;
-        padding: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        background: linear-gradient(135deg, #008952, #005f3a);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    /* Khung chứa form */
-    .login-box {
-        background: white;
-        padding: 40px;
-        border-radius: 15px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        width: 320px;
-        text-align: center;
-        transition: all 0.3s ease;
-    }
-    h2 { color: #333; margin-bottom: 25px; }
-    input {
-        display: block;
-        width: 100%;
-        margin-bottom: 15px;
-        padding: 14px;
-        border: 2px solid #eee;
-        border-radius: 8px;
-        box-sizing: border-box;
-        transition: border-color 0.3s;
-    }
-    input:focus {
-        border-color: #008952;
-        outline: none;
-    }
-    button {
-        width: 100%;
-        padding: 14px;
-        background: #008952;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 16px;
-        font-weight: bold;
-        transition: background 0.3s, transform 0.2s;
-    }
-    button:hover {
-        background: #006a3f;
-        transform: translateY(-2px);
-    }
-    #toggleText {
-        margin-top: 20px;
-        color: #666;
-        font-size: 14px;
-        text-decoration: underline;
-        transition: color 0.3s;
-    }
-    #toggleText:hover {
-        color: #008952;
-    }
-
-</style>
 
 <script>
     let isLogin = true;
@@ -88,50 +38,47 @@
     }
 
     async function handleAuth() {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const fullname = document.getElementById('fullname').value.trim();
         const btn = document.getElementById('mainBtn');
-        const url = isLogin ? '/api/auth/login' : '/api/auth/register'; // ĐÃ SỬA: Dùng đường dẫn tương đối
-        
-        const body = {
-            username: document.getElementById('username').value,
-            password: document.getElementById('password').value,
-            full_name: document.getElementById('fullname').value
-        };
 
-        if (!body.username || !body.password) {
+        if (!username || !password || (!isLogin && !fullname)) {
             alert("Vui lòng nhập đầy đủ thông tin!");
             return;
         }
-        
-        // Hiệu ứng chờ
+
         btn.disabled = true;
         btn.innerText = "Đang xử lý...";
-        
+
         try {
-            const res = await fetch(url, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify(body) 
+            const response = await fetch(isLogin ? '/api/auth/login' : '/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, full_name: fullname })
             });
-            
-            const data = await res.json();
-            
-            if(data.success) {
-                if(isLogin) {
+
+            const data = await response.json();
+
+            if (data.success) {
+                if (isLogin) {
+                    // Lưu object driver để các trang khác dùng driver.id
                     localStorage.setItem('driver', JSON.stringify(data.driver));
                     window.location.href = 'driver.html';
                 } else {
-                    alert("Đăng ký thành công! Vui lòng đăng nhập.");
+                    alert("Đăng ký thành công!");
                     toggleMode();
                 }
             } else {
-                alert(data.message || "Có lỗi xảy ra!");
+                alert(data.message || "Đăng nhập thất bại");
             }
         } catch (err) {
-            console.error(err);
-            alert("Không thể kết nối đến server. Vui lòng thử lại sau!");
+            alert("Lỗi kết nối server!");
         } finally {
             btn.disabled = false;
             btn.innerText = isLogin ? "Đăng nhập" : "Đăng ký";
         }
     }
 </script>
+</body>
+</html>
