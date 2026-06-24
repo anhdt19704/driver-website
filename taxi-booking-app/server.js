@@ -82,7 +82,12 @@ app.get('/api/driver/orders', async (req, res) => {
         res.json(result.rows);
     } catch (err) { res.status(500).send("Lỗi tải đơn hàng"); }
 });
-
+app.get('/api/admin/drivers', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM drivers');
+        res.json(result.rows);
+    } catch (err) { res.status(500).send(err.message); }
+});
 // API cập nhật trạng thái đơn hàng (Dành cho tài xế)
 app.post('/api/driver/update-status', async (req, res) => {
     const { id, status, driverId } = req.body;

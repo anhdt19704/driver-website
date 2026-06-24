@@ -10,12 +10,12 @@
         button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-right: 5px; }
         .btn-detail { background: #0056b3; color: white; }
         .btn-finish { background: #008952; color: white; }
-        /* Modal Style */
         .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000; }
         .modal-content { background:white; padding:25px; border-radius:12px; width:90%; max-width:400px; }
     </style>
 </head>
 <body>
+    <button onclick="window.location.href='driver.html'">⬅ Quay lại</button>
     <h2>Danh sách đơn hàng</h2>
     <div id="orderList">Đang tải đơn hàng...</div>
 
@@ -28,115 +28,85 @@
     </div>
 
     <script>
-        let allOrders = []; // Lưu danh sách đơn hàng toàn cục
+        let allOrders = [];
+
+        // Hàm lấy dữ liệu tài xế đồng nhất
+        function getDriverId() {
+            const driverData = JSON.parse(localStorage.getItem('driver'));
+            return driverData ? driverData.id : null;
+        }
 
         async function loadOrders() {
+            const dId = getDriverId();
+            if (!dId) {
+                window.location.href = 'login.html';
+                return;
+            }
             try {
-                const res = await fetch('/api/driver/orders'); // Đường dẫn tương đối
+                // Giả định API này trả về đơn hàng của tài xế dựa trên dId
+                const res = await fetch(`/api/driver/orders?driverId=${dId}`);
                 allOrders = await res.json();
                 renderOrders(allOrders);
             } catch (err) {
-                document.getElementById('orderList').innerText = "Lỗi tải đơn hàng.";
+                document.getElementById('orderList').innerText = "Lỗi tải dữ liệu.";
             }
         }
-async function updateStatus(orderId, newStatus) {
-    // 1. Lấy lại object tài xế từ localStorage
-    const driverData = JSON.parse(localStorage.getItem('driver'));
-    
-    // 2. Kiểm tra tài xế có tồn tại không
-    if (!driverData || !driverData.id) {
-        alert("Bạn chưa đăng nhập hoặc không tìm thấy thông tin tài xế!");
-        return;
-    }
 
-    // 3. Chuẩn bị dữ liệu gửi lên (driverId phải lấy từ driverData.id)
-    const payload = {
-        id: orderId,
-        status: newStatus,
-        driverId: driverData.id // Đảm bảo lấy đúng ID tại đây
-    };
-
-    console.log("Dữ liệu gửi lên server:", payload);
-
-    try {
-        const response = await fetch('/api/driver/update-status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-            alert("Cập nhật thành công!");
-            window.location.reload();
-        } else {
-            alert("Lỗi: " + result.message);
-        }
-    } catch (err) {
-        alert("Lỗi kết nối Server!");
-    }
-}
         function renderOrders(orders) {
             const list = document.getElementById('orderList');
+            if (orders.length === 0) { list.innerHTML = "<p>Bạn chưa có đơn hàng nào.</p>"; return; }
+            
             list.innerHTML = orders.map(o => `
                 <div class="order-card">
                     <p><strong>Khách hàng:</strong> ${o.customer_name}</p>
                     <p><strong>Trạng thái:</strong> ${o.status === 'completed' ? '✅ Đã hoàn thành' : o.status}</p>
                     <button class="btn-detail" onclick="showDetails(${o.id})">Xem chi tiết</button>
-                    ${o.status !== 'completed' ? `<button class="btn-finish" onclick="finishOrder(${o.id})">HOÀN THÀNH</button>` : ''}
+                    ${o.status !== 'completed' ? `<button class="btn-finish" onclick="updateStatus(${o.id}, 'completed')">HOÀN THÀNH</button>` : ''}
                 </div>
             `).join('');
         }
 
-        function showDetails(orderId) {
-        const order = allOrders.find(o => o.id === orderId);
-        if (!order) return;
+        async function updateStatus(orderId, newStatus) {
+            const dId = getDriverId();
+            if (!dId) {
+                alert("Bạn chưa đăng nhập!");
+                return;
+            }
 
-        // Định dạng lại ngày đón cho dễ đọc
-        const displayDate = order.pickup_date ? new Date(order.pickup_date).toLocaleDateString('vi-VN') : 'Chưa có';
-        const displayTime = order.pickup_time ? order.pickup_time.substring(0, 5) : 'Chưa có';
-
-        document.getElementById('modalContent').innerHTML = `
-            <p><strong>Khách hàng:</strong> ${order.customer_name}</p>
-            <p><strong>SĐT:</strong> ${order.phone}</p>
-            <p><strong>Ngày đón:</strong> ${displayDate} lúc ${displayTime}</p>
-            <p><strong>Điểm đón:</strong> ${order.pickup_location}</p>
-            <p><strong>Điểm đến:</strong> ${order.destination}</p>
-            <p><strong>Số điểm dừng thêm:</strong> ${order.stops || 0} điểm</p>
-            <p><strong>Giá tiền:</strong> ${parseFloat(order.price || 0).toLocaleString('vi-VN')} đ</p>
-            <p><strong>Trạng thái:</strong> ${order.status}</p>
-        `;
-        document.getElementById('detailModal').style.display = 'flex';
-    }
-
-        async function finishOrder(id) {
-    const dId = localStorage.getItem('driverId');
-    
-    // Debug: Kiểm tra dữ liệu trước khi gửi
-    console.log("Dữ liệu gửi lên server:", { id: id, status: 'completed', driverId: dId });
-
-    if (!dId) {
-        alert("Bạn chưa đăng nhập hoặc không tìm thấy ID tài xế!");
-        return;
-    }
-
-    try {
-        const res = await fetch('/api/driver/update-status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: id, status: 'completed', driverId: dId })
-        });
-        const data = await res.json();
-        if (data.success) {
-            alert("Đã cập nhật thành công!");
-            loadOrders();
-        } else {
-            alert("Lỗi từ server: " + (data.message || "Không xác định"));
+            try {
+                const response = await fetch('/api/driver/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: orderId, status: newStatus, driverId: dId })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert("Cập nhật thành công!");
+                    loadOrders();
+                } else {
+                    alert("Lỗi: " + result.message);
+                }
+            } catch (err) {
+                alert("Lỗi kết nối Server!");
+            }
         }
-    } catch (err) { alert("Không thể kết nối server!"); }
-}
+
+        function showDetails(orderId) {
+            const order = allOrders.find(o => o.id === orderId);
+            if (!order) return;
+            document.getElementById('modalContent').innerHTML = `
+                <p><strong>Khách hàng:</strong> ${order.customer_name}</p>
+                <p><strong>SĐT:</strong> ${order.phone}</p>
+                <p><strong>Lộ trình:</strong> ${order.pickup_location} ➔ ${order.destination}</p>
+                <p><strong>Giá tiền:</strong> ${parseFloat(order.price || 0).toLocaleString('vi-VN')} đ</p>
+                <p><strong>Trạng thái:</strong> ${order.status}</p>
+            `;
+            document.getElementById('detailModal').style.display = 'flex';
+        }
 
         function closeModal() { document.getElementById('detailModal').style.display = 'none'; }
+        
         loadOrders();
     </script>
 </body>
