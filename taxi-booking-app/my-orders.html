@@ -39,7 +39,43 @@
                 document.getElementById('orderList').innerText = "Lỗi tải đơn hàng.";
             }
         }
+async function updateStatus(orderId, newStatus) {
+    // 1. Lấy lại object tài xế từ localStorage
+    const driverData = JSON.parse(localStorage.getItem('driver'));
+    
+    // 2. Kiểm tra tài xế có tồn tại không
+    if (!driverData || !driverData.id) {
+        alert("Bạn chưa đăng nhập hoặc không tìm thấy thông tin tài xế!");
+        return;
+    }
 
+    // 3. Chuẩn bị dữ liệu gửi lên (driverId phải lấy từ driverData.id)
+    const payload = {
+        id: orderId,
+        status: newStatus,
+        driverId: driverData.id // Đảm bảo lấy đúng ID tại đây
+    };
+
+    console.log("Dữ liệu gửi lên server:", payload);
+
+    try {
+        const response = await fetch('/api/driver/update-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            alert("Cập nhật thành công!");
+            window.location.reload();
+        } else {
+            alert("Lỗi: " + result.message);
+        }
+    } catch (err) {
+        alert("Lỗi kết nối Server!");
+    }
+}
         function renderOrders(orders) {
             const list = document.getElementById('orderList');
             list.innerHTML = orders.map(o => `
