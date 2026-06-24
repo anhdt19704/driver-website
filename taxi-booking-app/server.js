@@ -138,8 +138,8 @@ app.post('/api/driver/accept-order', async (req, res) => {
     }
 });
 // --- Route tĩnh ---
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, req.path));
+app.get('/:file', (req, res) => {
+    res.sendFile(path.join(__dirname, req.params.file));
 });
 
 
