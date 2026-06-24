@@ -7,11 +7,20 @@ const { poolPromise } = require('./db');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: "*" } });
+const PORT = process.env.PORT || 3000;
 
 app.use(cors({ origin: '*', methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'] }));
 app.use(express.json());
 // Sửa dòng cũ thành:
 app.use(express.static(path.join(__dirname, 'taxi-booking-app')));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'taxi-booking-app', 'index.html'));
+});
+
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
 
 // --- Socket.io: Xử lý thời gian thực ---
 io.on('connection', (socket) => {
