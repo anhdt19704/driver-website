@@ -150,6 +150,22 @@ app.post('/api/admin/toggle-driver', async (req, res) => {
         res.json({ success: true });
     } catch (err) { res.status(500).json({ success: false }); }
 });
-
+app.get('/api/driver/orders', async (req, res) => {
+    try {
+        // Truy vấn bao gồm các cột mới bạn vừa thêm vào database
+        const query = `
+            SELECT id, customer_name, phone, pickup_location, destination, 
+                   price, status, created_at, 
+                   pickup_date, pickup_time, stops 
+            FROM bookings 
+            ORDER BY id DESC
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Lỗi tải đơn hàng");
+    }
+});
 
 server.listen(PORT, () => console.log(`Server chạy tại port ${PORT}`));
