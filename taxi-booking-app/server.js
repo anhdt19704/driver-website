@@ -4,8 +4,6 @@ const http = require('http');
 const socketIo = require('socket.io');
 const { Pool } = require('pg');
 const path = require('path');
-const { Server } = require('socket.io');
-const io = new Server(server);
 
 const app = express();
 const server = http.createServer(app);
@@ -22,29 +20,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-io.on('connection', (socket) => {
-    console.log("Một người dùng đã kết nối:", socket.id);
-    
-    // Gửi lịch sử chat khi kết nối
-    socket.on('get_history', async () => {
-        try {
-            const res = await pool.query('SELECT * FROM chat_messages ORDER BY created_at ASC LIMIT 50');
-            socket.emit('load_chat_history', res.rows);
-        } catch (err) { console.error("Lỗi lấy lịch sử:", err); }
-    });
-
-    socket.on('chat_message', async (data) => {
-        try {
-            await pool.query('INSERT INTO chat_messages (username, message) VALUES ($1, $2)', [data.user, data.msg]);
-            io.emit('new_chat_message', data);
-        } catch (err) { console.error("Lỗi lưu chat:", err); }
-    });
-});
-
-// Chú ý: Dùng server.listen thay vì app.listen
-server.listen(process.env.PORT || 10000, () => {
-    console.log("Server chạy tại port " + (process.env.PORT || 10000));
-});
 // --- API Auth ---
 app.post('/api/auth/register', async (req, res) => {
     try {
@@ -164,22 +139,7 @@ app.post('/api/admin/login', async (req, res) => {
     }
 });
 
-// Lấy lịch sử chat
-app.get('/api/chat/messages', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM messages ORDER BY created_at ASC');
-        res.json(result.rows);
-    } catch (err) { res.status(500).send(err.message); }
-});
 
-// Gửi tin nhắn mới
-app.post('/api/chat/send', async (req, res) => {
-    const { sender, message } = req.body;
-    try {
-        await pool.query('INSERT INTO messages (sender, message) VALUES ($1, $2)', [sender, message]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
-});
 
 app.post('/api/driver/accept-order', async (req, res) => {
     const { orderId, driverId } = req.body;
