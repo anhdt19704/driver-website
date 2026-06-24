@@ -10,7 +10,8 @@ const io = socketIo(server, { cors: { origin: "*" } });
 
 app.use(cors({ origin: '*', methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'] }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '.')));
+// Sửa dòng cũ thành:
+app.use(express.static(path.join(__dirname, 'taxi-booking-app')));
 
 // --- Socket.io: Xử lý thời gian thực ---
 io.on('connection', (socket) => {
