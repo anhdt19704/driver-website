@@ -11,54 +11,67 @@
         .btn-accept { width: 100%; background: #28a745; color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; }
         .btn-accept:hover { background: #218838; }
         #newBookingList { max-width: 500px; margin: 0 auto; }
+        .loading { text-align: center; color: #666; }
     </style>
 </head>
 <body>
 
     <button onclick="window.location.href='driver.html'" style="padding:10px; border-radius:8px; border:none; cursor:pointer;">⬅ Quay lại</button>
     <h2>Đơn hàng mới</h2>
-    <div id="newBookingList">Đang tải dữ liệu...</div>
+    <div id="newBookingList" class="loading">Đang tải dữ liệu...</div>
 
     <script>
+        // Kiểm tra đăng nhập ngay khi tải trang
         const driver = JSON.parse(localStorage.getItem('driver'));
-        if (!driver) {
+        if (!driver || !driver.id) {
             window.location.href = 'login.html';
         }
 
         async function fetchNewOrders() {
-        try {
-            const res = await fetch('/api/all-bookings');
-            const data = await res.json();
-            const pending = data.filter(b => b.status === 'pending');
-            
-            if (pending.length === 0) {
-                document.getElementById('newBookingList').innerHTML = "<p style='text-align:center;'>Hiện tại không có đơn hàng mới.</p>";
+            try {
+                const res = await fetch('/api/all-bookings');
+                const data = await res.json();
+                
+                // Chỉ hiển thị đơn hàng có trạng thái 'pending'
+                const pending = data.filter(b => b.status === 'pending');
+                
+                const listDiv = document.getElementById('newBookingList');
+                if (pending.length === 0) {
+                    listDiv.innerHTML = "<p style='text-align:center;'>Hiện tại không có đơn hàng mới.</p>";
+                    return;
+                }
+
+                listDiv.innerHTML = pending.map(b => {
+                    const dateStr = b.pickup_date ? new Date(b.pickup_date).toLocaleDateString('vi-VN') : '---';
+                    const timeStr = b.pickup_time ? b.pickup_time.substring(0, 5) : '---';
+                    const priceStr = b.price ? Number(b.price).toLocaleString() + 'đ' : 'Thỏa thuận';
+                    
+                    return `
+                        <div class="booking-item">
+                            <strong>Khách:</strong> ${b.customer_name}<br>
+                            <strong>Thời gian:</strong> ${dateStr} - ${timeStr}<br>
+                            <strong>Lộ trình:</strong> ${b.pickup_location} ➔ ${b.destination}<br>
+                            <strong>Điểm dừng:</strong> ${b.stops || 0} điểm<br>
+                            <strong>Giá:</strong> ${priceStr}<br>
+                            <button class="btn-accept" onclick="acceptOrder(${b.id})">NHẬN ĐƠN</button>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                document.getElementById('newBookingList').innerHTML = "Lỗi kết nối: " + err.message;
+            }
+        }
+
+        async function acceptOrder(id) {
+            // Lấy lại thông tin driver từ localStorage
+            const driver = JSON.parse(localStorage.getItem('driver'));
+            if (!driver || !driver.id) {
+                alert("Bạn cần đăng nhập lại!");
+                window.location.href = 'login.html';
                 return;
             }
 
-            document.getElementById('newBookingList').innerHTML = pending.map(b => {
-                // Định dạng ngày giờ
-                const dateStr = b.pickup_date ? new Date(b.pickup_date).toLocaleDateString('vi-VN') : '---';
-                const timeStr = b.pickup_time ? b.pickup_time.substring(0, 5) : '---';
-                
-                return `
-                    <div class="booking-item">
-                        <strong>Khách:</strong> ${b.customer_name}<br>
-                        <strong>Thời gian:</strong> ${dateStr} - ${timeStr}<br>
-                        <strong>Lộ trình:</strong> ${b.pickup_location} ➔ ${b.destination}<br>
-                        <strong>Điểm dừng thêm:</strong> ${b.stops || 0} điểm<br>
-                        <strong>Giá:</strong> ${b.price ? b.price.toLocaleString() + 'đ' : 'Thỏa thuận'}<br>
-                        <button class="btn-accept" onclick="acceptOrder(${b.id})">NHẬN ĐƠN</button>
-                    </div>
-                `;
-            }).join('');
-        } catch (err) {
-            document.getElementById('newBookingList').innerHTML = "Lỗi tải dữ liệu: " + err.message;
-        }
-    }
-        async function acceptOrder(id) {
             try {
-                // ĐÃ SỬA: Dùng đường dẫn tương đối
                 const response = await fetch('/api/driver/accept-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -67,11 +80,10 @@
                 
                 const result = await response.json();
                 if (result.success) {
-                    alert("Đã nhận đơn thành công!");
-                    window.location.href = 'my-orders.html';
+                    alert("Nhận đơn thành công!");
+                    window.location.reload(); // Tải lại để cập nhật danh sách
                 } else {
-                    alert("Lỗi: " + (result.message || "Đơn đã có người nhận"));
-                    fetchNewOrders(); // Tải lại danh sách nếu lỗi
+                    alert("Lỗi: " + result.message);
                 }
             } catch (err) {
                 alert("Lỗi kết nối Server!");

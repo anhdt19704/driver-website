@@ -137,11 +137,15 @@ app.post('/api/driver/accept-order', async (req, res) => {
         res.status(500).json({ success: false, message: "Lỗi Server" });
     }
 });
-// --- Route tĩnh ---
+// Route cho trang chủ
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Route cho các file html khác
 app.get('/:file', (req, res) => {
     res.sendFile(path.join(__dirname, req.params.file));
 });
-
 
 
 server.listen(PORT, () => console.log(`Server chạy tại port ${PORT}`));
