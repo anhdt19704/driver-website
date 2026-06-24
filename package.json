@@ -1,26 +1,25 @@
 {
   "name": "dx",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Taxi booking app",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/anhdt19704/driver-website.git"
   },
-  "keywords": [],
+  "keywords": [
+    "taxi",
+    "booking"
+  ],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/anhdt19704/driver-website/issues"
-  },
-  "homepage": "https://github.com/anhdt19704/driver-website#readme",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^5.2.1",
-    "mongoose": "^9.7.2",
-    "pg": "^8.22.0"
+    "pg": "^8.13.0",
+    "socket.io": "^4.8.0"
   }
 }
