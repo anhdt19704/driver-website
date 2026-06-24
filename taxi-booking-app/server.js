@@ -86,19 +86,19 @@ app.get('/api/driver/orders', async (req, res) => {
 // API cập nhật trạng thái đơn hàng (Dành cho tài xế)
 app.post('/api/driver/update-status', async (req, res) => {
     const { id, status, driverId } = req.body;
+    if (!id || !driverId) return res.status(400).json({ success: false, message: "Thiếu thông tin xác thực" });
+    
     try {
-        if (!id || !driverId) return res.status(400).json({ success: false, message: "Thiếu dữ liệu" });
-        
+        // Cập nhật đơn hàng chỉ cho tài xế sở hữu đơn đó
         const result = await pool.query(
-    "UPDATE bookings SET status = $1 WHERE id = $2", // Bỏ điều kiện driverId
-    [status, id] 
-);
+            "UPDATE bookings SET status = $1 WHERE id = $2 AND assigned_driver_id = $3", 
+            [status, id, driverId]
+        );
         
         if (result.rowCount > 0) res.json({ success: true });
-        else res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng" });
+        else res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng hoặc quyền truy cập bị từ chối" });
     } catch (err) { res.status(500).json({ success: false, message: "Lỗi Server" }); }
 });
-
 // --- Socket.io xử lý chat ---
 io.on('connection', (socket) => {
     socket.on('chat_message', async (data) => {
