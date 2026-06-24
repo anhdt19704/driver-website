@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors({ origin: '*', methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'] }));
 app.use(express.json());
 // Sửa dòng cũ thành:
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname)));
 
 // Route cho trang chủ
 app.get('/', (req, res) => {
