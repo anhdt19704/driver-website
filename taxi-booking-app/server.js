@@ -48,10 +48,10 @@ app.post('/api/book', async (req, res) => {
 
     try {
         await pool.query(
-            `INSERT INTO bookings (customer_name, phone, route, vehicle_id, pickup_date, pickup_time, stops, pickup_location, price, status) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')`,
-            [name, phone, route, vehicle, date || null, time || null, stops || 0, pickup, cleanPrice]
-        );
+    `INSERT INTO bookings (customer_name, phone, route, vehicle_id, pickup_date, pickup_time, stops, pickup_location, price, status) 
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')`,
+    [name, phone, route, vehicle, date, time, stops, pickup, cleanPrice]
+);
         res.json({ success: true });
     } catch (err) {
         console.error("Lỗi Database chi tiết:", err); // Xem lỗi này trong Logs của Render
