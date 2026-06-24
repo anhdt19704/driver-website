@@ -33,6 +33,17 @@ app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
 
+const { Client } = require('pg');
+
+const client = new Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
+client.connect()
+  .then(() => console.log("Kết nối Database thành công!"))
+  .catch(err => console.error("Lỗi kết nối:", err));
+
 // --- Socket.io: Xử lý thời gian thực ---
 io.on('connection', (socket) => {
     console.log('User kết nối:', socket.id);
