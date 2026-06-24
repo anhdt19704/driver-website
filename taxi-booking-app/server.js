@@ -4,6 +4,8 @@ const http = require('http');
 const socketIo = require('socket.io');
 const { Pool } = require('pg');
 const path = require('path');
+const { Server } = require('socket.io');
+const io = new Server(server);
 
 const app = express();
 const server = http.createServer(app);
@@ -19,7 +21,25 @@ const pool = new Pool({
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+let chatHistory = []; 
 
+io.on('connection', (socket) => {
+    // Gửi lịch sử khi người dùng vừa kết nối
+    socket.emit('load_chat_history', chatHistory);
+
+    socket.on('chat_message', (data) => {
+        chatHistory.push(data); // Lưu tin nhắn vào bộ nhớ
+        // Giới hạn lịch sử 50 tin nhắn cuối
+        if (chatHistory.length > 50) chatHistory.shift(); 
+        
+        io.emit('new_chat_message', data); // Gửi cho tất cả mọi người
+    });
+});
+
+// Chú ý: Dùng server.listen thay vì app.listen
+server.listen(process.env.PORT || 10000, () => {
+    console.log("Server chạy tại port " + (process.env.PORT || 10000));
+});
 // --- API Auth ---
 app.post('/api/auth/register', async (req, res) => {
     try {
@@ -137,6 +157,23 @@ app.post('/api/admin/login', async (req, res) => {
     } else {
         res.status(401).json({ success: false, message: 'Sai thông tin admin' });
     }
+});
+
+// Lấy lịch sử chat
+app.get('/api/chat/messages', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM messages ORDER BY created_at ASC');
+        res.json(result.rows);
+    } catch (err) { res.status(500).send(err.message); }
+});
+
+// Gửi tin nhắn mới
+app.post('/api/chat/send', async (req, res) => {
+    const { sender, message } = req.body;
+    try {
+        await pool.query('INSERT INTO messages (sender, message) VALUES ($1, $2)', [sender, message]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false }); }
 });
 
 app.post('/api/driver/accept-order', async (req, res) => {
