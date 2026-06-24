@@ -13,10 +13,11 @@ const PORT = process.env.PORT || 3000;
 app.use(cors({ origin: '*', methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'] }));
 app.use(express.json());
 // Sửa dòng cũ thành:
-app.use(express.static(path.join(__dirname, 'taxi-booking-app')));
+app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'taxi-booking-app', 'index.html'));
+    // Không cần nối thêm 'taxi-booking-app' nữa vì __dirname đã là nó rồi
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
