@@ -108,7 +108,21 @@ io.on('connection', (socket) => {
         } catch (err) { console.error("Lỗi chat:", err); }
     });
 });
-
+// API xoá đơn hàng (dành cho Admin)
+app.delete('/api/admin/delete-order/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query("DELETE FROM bookings WHERE id = $1", [id]);
+        if (result.rowCount > 0) {
+            res.json({ success: true, message: "Đã xóa đơn hàng thành công!" });
+        } else {
+            res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng!" });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: "Lỗi Server khi xóa đơn!" });
+    }
+});
 // --- Route tĩnh ---
 app.get(['/', '/driver.html', '/admin-hub.html', '/my-orders.html'], (req, res) => {
     res.sendFile(path.join(__dirname, req.path === '/' ? 'index.html' : req.path.substring(1)));
