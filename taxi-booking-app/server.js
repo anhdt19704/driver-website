@@ -10,6 +10,7 @@ const io = socketIo(server, { cors: { origin: "*" } });
 
 app.use(cors({ origin: '*', methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'] }));
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '.')));
 
 // --- Socket.io: Xử lý thời gian thực ---
 io.on('connection', (socket) => {
@@ -265,4 +266,5 @@ app.post('/api/complete-order', (req, res) => {
         res.json({ message: "Thành công" });
     });
 });
+
 server.listen(3000, () => console.log('Server chạy tại http://localhost:3000'));
