@@ -40,21 +40,19 @@ app.post('/api/auth/login', async (req, res) => {
 
 // --- API Đặt xe ---
 app.post('/api/book', async (req, res) => {
-    // Đảm bảo các tên biến khớp với dữ liệu gửi từ index.html
-    const { name, phone, route, vehicle, date, time, stops, pickup, price } = req.body;
-    
-    // Xử lý giá tiền: loại bỏ chữ 'đ' và dấu chấm nếu cần
+    // Thêm destination vào danh sách biến nhận từ req.body
+    const { name, phone, route, vehicle, date, time, stops, pickup, destination, price } = req.body;
     const cleanPrice = price ? price.toString().replace(/[^\d]/g, '') : 0;
 
     try {
         await pool.query(
-    `INSERT INTO bookings (customer_name, phone, route, vehicle_id, pickup_date, pickup_time, stops, pickup_location, price, status) 
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')`,
-    [name, phone, route, vehicle, date, time, stops, pickup, cleanPrice]
-);
+            `INSERT INTO bookings (customer_name, phone, route, vehicle_id, pickup_date, pickup_time, stops, pickup_location, destination, price, status) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending')`,
+            [name, phone, route, vehicle, date || null, time || null, stops || 0, pickup, destination, cleanPrice]
+        );
         res.json({ success: true });
     } catch (err) {
-        console.error("Lỗi Database chi tiết:", err); // Xem lỗi này trong Logs của Render
+        console.error("Lỗi Database:", err);
         res.status(500).json({ success: false, message: "Lỗi lưu database: " + err.message });
     }
 });

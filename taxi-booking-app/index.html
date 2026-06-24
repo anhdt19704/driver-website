@@ -58,6 +58,9 @@
     <label>Điểm đón cụ thể</label>
     <input type="text" id="pickup" placeholder="Số nhà, tên đường...">
 
+    <label>Điểm đến</label>
+    <input type="text" id="destination" placeholder="Ví dụ: Sân bay Nội Bài...">
+
     <button class="zalo-btn" onclick="submitBooking()">🚀 ĐẶT XE NGAY</button>
 </div>
 
@@ -91,6 +94,7 @@
             time: document.getElementById('pickupTime').value,
             stops: document.getElementById('extraStops').value,
             pickup: document.getElementById('pickup').value,
+            destination: document.getElementById('destination').value,
             price: document.getElementById('priceDisplay').innerText
         };
 
