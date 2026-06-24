@@ -123,9 +123,25 @@ app.delete('/api/admin/delete-order/:id', async (req, res) => {
         res.status(500).json({ success: false, message: "Lỗi Server khi xóa đơn!" });
     }
 });
-// --- Route tĩnh ---
-app.get(['/', '/driver.html', '/admin-hub.html', '/my-orders.html'], (req, res) => {
-    res.sendFile(path.join(__dirname, req.path === '/' ? 'index.html' : req.path.substring(1)));
+
+app.post('/api/driver/accept-order', async (req, res) => {
+    const { orderId, driverId } = req.body;
+    try {
+        const result = await pool.query(
+            "UPDATE bookings SET status = 'accepted', assigned_driver_id = $1 WHERE id = $2 AND status = 'pending'",
+            [driverId, orderId]
+        );
+        if (result.rowCount > 0) res.json({ success: true });
+        else res.status(400).json({ success: false, message: "Đơn hàng đã có người nhận hoặc không tồn tại" });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Lỗi Server" });
+    }
 });
+// --- Route tĩnh ---
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, req.path));
+});
+
+
 
 server.listen(PORT, () => console.log(`Server chạy tại port ${PORT}`));
